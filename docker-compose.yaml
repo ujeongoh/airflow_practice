@@ -22,13 +22,13 @@ services:
     ports:
       - "5432:5432"
 
-  init:
-    image: *airflow_image
-    depends_on:
-      - postgres
-    environment: *airflow_environment
-    entrypoint: /bin/bash
-    command: -c 'airflow db init && airflow users create --username admin --password admin --firstname Anonymous --lastname Admin --role Admin --email admin@example.org'
+  # init:
+  #   image: *airflow_image
+  #   depends_on:
+  #     - postgres
+  #   environment: *airflow_environment
+  #   entrypoint: /bin/bash
+  #   command: -c 'airflow db init && airflow users create --username admin --password admin --firstname Anonymous --lastname Admin --role Admin --email admin@example.org'
 
   webserver:
     image: *airflow_image
@@ -48,8 +48,8 @@ services:
     depends_on:
       - postgres
     volumes:
-      - logs
-      - dags:/opt/airflow/dags
+      - logs:/opt/airflow/logs
+      - ./dags:/opt/airflow/dags
     environment: *airflow_environment
     command: scheduler
 
