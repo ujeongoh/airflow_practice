@@ -46,9 +46,9 @@
 --- # ---로 구분되어 여러개의 문서를 작성할 수 있다
 version: "3.8"
 
-x-airflow-common: &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.6.1}
-  # build: . # image 설정이 지정되지 않은 경우에 사용, 현재 디렉토리에 있는 Dockerfile을 사용하여 이미지를 빌드하고 해당 이미지를 서비스에 사용함
+x-airflow-common:
+  &airflow-common #image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.6.1}
+  build: . # image 설정이 지정되지 않은 경우에 사용, 현재 디렉토리에 있는 Dockerfile을 사용하여 이미지를 빌드하고 해당 이미지를 서비스에 사용함
   environment:
     &airflow-common-env # anchor : YAML 내에서 재사용 가능한 값을 정의하기 위해 사용
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor # LocalExecutor로 설정 시 작업을 병렬로 실행하지 않고 순차적으로 처리함
@@ -152,9 +152,9 @@ services:
 
   airflow-worker:
     <<: *airflow-common
-    build:
-      context: .
-      dockerfile: Dockerfile.worker
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.worker
     command: celery worker
     healthcheck:
       test:
