@@ -52,7 +52,7 @@ def load(schema, table, records):
         # 임시 테이블로 원본 테이블을 복사
         cur.execute(f"CREATE TEMP TABLE t AS SELECT * FROM {schema}.{table};")
         for r in records:
-            sql = f"INSERT INTO {schema}.{table} VALUES ('{r[0]}', {r[1]}, {r[2]}, {r[3]}, {r[4]}, {r[5]});"
+            sql = f"INSERT INTO t VALUES ('{r[0]}', {r[1]}, {r[2]}, {r[3]}, {r[4]}, {r[5]});"
             print(sql)
             cur.execute(sql)
             
