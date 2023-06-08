@@ -1,3 +1,5 @@
 boto3
 sagemaker
+yfinance
 apache-airflow[aws]
+apache-airflow[postgres]
