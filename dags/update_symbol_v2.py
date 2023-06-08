@@ -2,14 +2,11 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime
-from pandas import Timestamp
-
 import yfinance as yf
-import pandas as pd
 import logging
 
 def get_redshift_conn(autocommit=True):
-    hook = PostgresHook(postgres_conn_id='aws_redshift_dev_db')
+    hook = PostgresHook(postgres_conn_id='aws_redshift_learnde')
     conn = hook.get_conn()
     conn.autocommit = autocommit
     return conn.cursor()
@@ -20,12 +17,13 @@ def _create_table(cur, schema, table, drop_first):
     cur.execute(f"""
                 CREATE TABLE IF NOT EXISTS {schema}.{table}
                 (
-                    date date,
+                    date date primary key,
                     "open" float,
                     high float,
                     low float,
                     close float,
-                    volume bigint
+                    volume bigint,
+                    created_date timestamp default GETDATE()
                 );            
                 """)             
 
@@ -60,9 +58,20 @@ def load(schema, table, records):
             
         # 원본 테이블 생성
         _create_table(cur, schema, table, True)
-        # 임시 테이블 내용을 원본 테이블로 복사
-        cur.execute(f"INSERT INTO {schema}.{table} SELECT DISTINCT * FROM t;")    
-        cur.execute("COMMIT;")   # cur.execute("END;")
+        # 임시 테이블 내용을 ROW_NUMBER 사용하여 최신의 것을 가져와 원본 테이블로 중복없이 복사
+        sql = f"""
+            INSERT INTO {schema}.{table}
+            SELECT date, "open", high, low, close, volume
+            FROM (
+                SELECT 
+                    *, 
+                    ROW_NUMBER() OVER (PARTITION BY date ORDER BY created_date DESC) seq
+                FROM t
+            )
+            WHERE seq = 1;
+        """        
+        cur.execute(sql)
+        cur.execute("COMMIT;")  
         
     except Exception as error:
         print(error)
@@ -79,7 +88,7 @@ with DAG(
     schedule='0 10 * * *'
 ) as dag:
     
-    schema = "yujeong"
+    schema = "dbwjd090"
     table = "stock_info"
     results = get_historical_prices("AAPL")
     load(schema, table, results)
