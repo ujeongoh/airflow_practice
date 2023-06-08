@@ -26,10 +26,10 @@ def get_countries_data():
     logging.info("Get countries data done")   
     return data
 
-def _transform_data(**ctx):
+@task
+def transform_data(data):
     logging.info("Transform data start")
     
-    data = ctx['ti'].xcom_pull(task_ids='get_countries_data')
     rows = []
     for d in data:
         name = d['name']['official'].replace("'", "''")
@@ -41,12 +41,10 @@ def _transform_data(**ctx):
     logging.info("Transform data done")
     return rows
 
-def _load_data(**ctx):
+@task
+def load_data(schema, table, data):
     logging.info("Load data start")
     cur = get_redshift_conn()
-    schema = ctx['params']['schema']
-    table = ctx['params']['table']
-    data = ctx['ti'].xcom_pull(task_ids='transform_data')
     
     try:
         cur.execute("BEGIN;")
@@ -76,22 +74,9 @@ with DAG(
     tags=['API'],
     schedule='30 6 * * 6'
 ) as dag:
-    params = {
-        "schema" : "dbwjd090",
-        "table" : "countries"
-    }
-    
-    transform_data=PythonOperator(
-        task_id='transform_data',
-        python_callable=_transform_data,
-        provide_context=True
-    )
-    
-    load_data=PythonOperator(
-        task_id='load_data',
-        python_callable=_load_data,
-        provide_context=True,
-        op_kwargs={'params': params}
-    )
-    
-    get_countries_data() >> transform_data >> load_data
+
+    schema = "dbwjd090"
+    table = "countries"
+
+    rows = transform_data(get_countries_data())
+    load_data(schema, table, rows)
