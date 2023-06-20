@@ -46,7 +46,7 @@
 --- # ---로 구분되어 여러개의 문서를 작성할 수 있다
 version: "3.8"
 
-x-airflow-common: &airflow-common 
+x-airflow-common: &airflow-common
   image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.6.1}
   #build: . # image 설정이 지정되지 않은 경우에 사용, 현재 디렉토리에 있는 Dockerfile을 사용하여 이미지를 빌드하고 해당 이미지를 서비스에 사용함
   environment:
@@ -68,13 +68,14 @@ x-airflow-common: &airflow-common
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
     # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- sagemaker yfinance}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- yfinance pandas numpy oauth2client gspread}
+    AIRFLOW_VAR_DATA_DIR: /opt/airflow/data
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ${AIRFLOW_PROJ_DIR:-.}/outputs:/opt/airflow/outputs
+    - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
   # Airflow 컨테이너 내에서 실행되는 사용자를 지정
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
@@ -258,8 +259,8 @@ services:
           echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
           echo
         fi
-        mkdir -p /sources/logs /sources/dags /sources/plugins
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        mkdir -p /sources/logs /sources/dags /sources/plugins /sources/data
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data}
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:
