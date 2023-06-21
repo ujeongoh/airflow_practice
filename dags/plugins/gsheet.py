@@ -119,7 +119,7 @@ def add_df_to_sheet_in_bulk(sh, sheet, df, header=None, clear=False):
     if clear:
         sh.worksheet(sheet).clear()
     sh.values_update(
-        '{sheet}!A1'.format(sheet=sheet),
+        f'{sheet}!A1',
         params={'valueInputOption': 'RAW'},
         body={'values': records}
     )
