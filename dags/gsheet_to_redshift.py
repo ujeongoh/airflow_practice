@@ -14,6 +14,29 @@ import logging
 import psycopg2
 import json
 
+def download_tab_in_gsheet(**context):
+    url = context['params']['url']
+    tab = context['params']['tab']
+    table = context['params']['table']
+    data_dir = Variable.get('DATA_DIR')
+    
+    gsheet.get_google_sheet_to_csv(
+        url,
+        tab,
+        f'{data_dir}{table}.csv'
+    )
+        
+def copy_to_s3(**context):
+    table = context['params']['table']
+    s3_key = context['params']['s3_key']      
+    s3_conn_id = 'aws_conn_id'
+    s3_bucket = 'grepp-data-engineering'
+    data_dir = Variable.get('DATA_DIR')
+    local_files_to_upload = [f'{data_dir}{table}.csv']
+    replace = True
+    
+    s3.upload_to_s3(s3_conn_id, s3_bucket, s3_key, local_files_to_upload, replace)
+
 with DAG(
     dag_id='gsheet_to_redshift',
     start_date=datetime(2021,11,27),
@@ -27,30 +50,6 @@ with DAG(
         'on_failure_callback': slack.on_failure_callback
     } 
 ) as dag:
-
-    def download_tab_in_gsheet(**context):
-        url = context['params']['url']
-        tab = context['params']['tab']
-        table = context['params']['table']
-        data_dir = Variable.get('DATA_DIR')
-        
-        gsheet.get_google_sheet_to_csv(
-            url,
-            tab,
-            f'{data_dir}{table}.csv'
-        )
-        
-    def copy_to_s3(**context):
-        table = context['params']['table']
-        s3_key = context['params']['s3_key']      
-        s3_conn_id = 'aws_conn_id'
-        s3_bucket = 'grepp-data-engineering'
-        data_dir = Variable.get('DATA_DIR')
-        local_files_to_upload = [f'{data_dir}{table}.csv']
-        replace = True
-        
-        s3.upload_to_s3(s3_conn_id, s3_bucket, s3_key, local_files_to_upload, replace)
-    
 
     sheets = [
         {
