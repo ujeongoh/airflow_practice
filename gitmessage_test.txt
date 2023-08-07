@@ -1,1 +1,2 @@
 gitmessage_test 용 텍스트 파일입니다.
+vscode로 에디터 변경
